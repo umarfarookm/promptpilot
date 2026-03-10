@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+apps/api/.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Master prompt (internal only)
+MASTER_PROMPT.md
+
+# Claude config
+.claude/
