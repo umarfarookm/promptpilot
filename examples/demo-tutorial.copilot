@@ -1,0 +1,26 @@
+SAY: Welcome to today's tutorial on building a REST API with Node.js
+SAY: We'll start by setting up our project directory and installing dependencies
+
+ACTION: Open your terminal application
+
+COMMAND: mkdir my-api && cd my-api
+
+COMMAND: npm init -y
+
+SAY: Now let's install Express, our web framework of choice
+
+COMMAND: npm install express
+
+SAY: Let's create our main application file
+
+ACTION: Create a new file called index.js
+
+SAY: We'll set up a basic Express server with a hello world endpoint
+SAY: Notice how we import Express and create an app instance
+
+ACTION: Switch to browser and open localhost:3000
+
+COMMAND: node index.js
+
+SAY: And there we have it - our API is running!
+SAY: In the next section, we'll add database connectivity
