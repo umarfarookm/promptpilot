@@ -1,4 +1,12 @@
-import type { TeleprompterSettings } from '@promptpilot/types';
+import type { TeleprompterSettings, SpeechSyncSettings } from '@promptpilot/types';
+
+export const DEFAULT_SPEECH_SYNC_SETTINGS: SpeechSyncSettings = {
+  enabled: false,
+  provider: 'web-speech-api',
+  language: 'en-US',
+  scrollBehavior: 'smooth',
+  lookAheadLines: 3,
+};
 
 export const DEFAULT_TELEPROMPTER_SETTINGS: TeleprompterSettings = {
   fontSize: 32,
@@ -9,6 +17,8 @@ export const DEFAULT_TELEPROMPTER_SETTINGS: TeleprompterSettings = {
   theme: 'dark',
   lineSpacing: 1.6,
   marginPercent: 15,
+  scrollMode: 'auto',
+  speechSync: DEFAULT_SPEECH_SYNC_SETTINGS,
 };
 
 export const FONT_SIZE_PRESETS = {

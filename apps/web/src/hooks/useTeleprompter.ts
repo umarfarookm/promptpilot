@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { TeleprompterSettings, TeleprompterState } from '@promptpilot/types';
+import type { TeleprompterSettings, TeleprompterState, ScriptWordPosition } from '@promptpilot/types';
 import { DEFAULT_TELEPROMPTER_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/constants';
 
 function loadSettings(): TeleprompterSettings {
@@ -38,6 +38,8 @@ export function useTeleprompter(blockCount: number) {
     currentBlockIndex: 0,
     currentSentenceIndex: 0,
     elapsedTime: 0,
+    speechStatus: 'idle',
+    matchedPosition: null,
   });
 
   // Load settings from localStorage on mount
@@ -109,13 +111,15 @@ export function useTeleprompter(blockCount: number) {
   );
 
   const play = useCallback(() => {
+    // Only run auto-scroll in auto mode
+    if (settings.scrollMode === 'speech') return;
     setState((prev) => ({ ...prev, isPlaying: true }));
     lastTimeRef.current = 0;
     if (!startTimeRef.current) {
       startTimeRef.current = performance.now();
     }
     animationRef.current = requestAnimationFrame(scrollLoop);
-  }, [scrollLoop]);
+  }, [scrollLoop, settings.scrollMode]);
 
   const pause = useCallback(() => {
     setState((prev) => ({ ...prev, isPlaying: false }));
@@ -154,8 +158,47 @@ export function useTeleprompter(blockCount: number) {
       currentBlockIndex: 0,
       currentSentenceIndex: 0,
       elapsedTime: 0,
+      speechStatus: 'idle',
+      matchedPosition: null,
     });
   }, [pause]);
+
+  // Scroll to a specific block by its data-block-index attribute
+  const scrollToBlock = useCallback((blockIndex: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const blockEl = container.querySelector(`[data-block-index="${blockIndex}"]`);
+    if (!blockEl) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const blockRect = blockEl.getBoundingClientRect();
+    const offset = blockRect.top - containerRect.top + container.scrollTop;
+
+    // Scroll so the block is in the upper third of the viewport
+    const targetScroll = offset - container.clientHeight * 0.33;
+
+    container.scrollTo({
+      top: targetScroll,
+      behavior: 'smooth',
+    });
+
+    setState((prev) => ({
+      ...prev,
+      currentBlockIndex: blockIndex,
+    }));
+  }, []);
+
+  // Scroll to a word position (used by speech sync)
+  const scrollToWordPosition = useCallback((position: ScriptWordPosition) => {
+    scrollToBlock(position.blockIndex);
+    setState((prev) => ({
+      ...prev,
+      currentBlockIndex: position.blockIndex,
+      currentSentenceIndex: position.sentenceIndex,
+      matchedPosition: position,
+    }));
+  }, [scrollToBlock]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -175,5 +218,7 @@ export function useTeleprompter(blockCount: number) {
     pause,
     toggle,
     reset,
+    scrollToBlock,
+    scrollToWordPosition,
   };
 }
