@@ -1,3 +1,5 @@
+import type { SpeechSyncSettings, SpeechRecognitionStatus, ScriptWordPosition } from './speech';
+
 export interface TeleprompterSettings {
   fontSize: number; // 16-72
   scrollSpeed: number; // 0-100
@@ -7,6 +9,8 @@ export interface TeleprompterSettings {
   theme: "dark" | "light";
   lineSpacing: number;
   marginPercent: number;
+  scrollMode: 'auto' | 'speech';
+  speechSync: SpeechSyncSettings;
 }
 
 export interface TeleprompterState {
@@ -14,4 +18,6 @@ export interface TeleprompterState {
   currentBlockIndex: number;
   currentSentenceIndex: number;
   elapsedTime: number;
+  speechStatus: SpeechRecognitionStatus;
+  matchedPosition: ScriptWordPosition | null;
 }
