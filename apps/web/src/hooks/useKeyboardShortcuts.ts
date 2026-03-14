@@ -7,12 +7,14 @@ interface KeyboardShortcutActions {
   toggle: () => void;
   setSettings: (update: Partial<TeleprompterSettings>) => void;
   settings: TeleprompterSettings;
+  onToggleSpeechSync?: () => void;
 }
 
 export function useKeyboardShortcuts({
   toggle,
   setSettings,
   settings,
+  onToggleSpeechSync,
 }: KeyboardShortcutActions) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -78,11 +80,27 @@ export function useKeyboardShortcuts({
           }
           break;
 
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          if (onToggleSpeechSync) {
+            onToggleSpeechSync();
+          }
+          break;
+
+        case 'v':
+        case 'V':
+          e.preventDefault();
+          setSettings({
+            scrollMode: settings.scrollMode === 'auto' ? 'speech' : 'auto',
+          });
+          break;
+
         default:
           break;
       }
     },
-    [toggle, setSettings, settings.scrollSpeed, settings.fontSize],
+    [toggle, setSettings, settings.scrollSpeed, settings.fontSize, settings.scrollMode, onToggleSpeechSync],
   );
 
   useEffect(() => {

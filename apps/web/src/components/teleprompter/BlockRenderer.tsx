@@ -6,23 +6,30 @@ import { SentenceHighlighter } from './SentenceHighlighter';
 
 interface BlockRendererProps {
   block: ScriptBlock;
+  blockIndex: number;
   fontSize: number;
   lineSpacing: number;
   isActive: boolean;
   highlightCurrent: boolean;
+  activeWordIndex?: number;
 }
 
 export function BlockRenderer({
   block,
+  blockIndex,
   fontSize,
   lineSpacing,
   isActive,
   highlightCurrent,
+  activeWordIndex,
 }: BlockRendererProps) {
+  const dataAttrs = { 'data-block-index': blockIndex };
+
   switch (block.type) {
     case 'SAY':
       return (
         <div
+          {...dataAttrs}
           className={clsx(
             'block-say transition-opacity duration-300',
             isActive && highlightCurrent ? 'opacity-100' : 'opacity-70',
@@ -40,6 +47,7 @@ export function BlockRenderer({
               currentSentenceIndex={0}
               fontSize={fontSize}
               lineSpacing={lineSpacing}
+              activeWordIndex={activeWordIndex}
             />
           ) : (
             <p
@@ -55,6 +63,7 @@ export function BlockRenderer({
     case 'ACTION':
       return (
         <div
+          {...dataAttrs}
           className={clsx(
             'block-action transition-opacity duration-300',
             isActive && highlightCurrent ? 'opacity-100' : 'opacity-70',
@@ -90,6 +99,7 @@ export function BlockRenderer({
     case 'COMMAND':
       return (
         <div
+          {...dataAttrs}
           className={clsx(
             'block-command transition-opacity duration-300',
             isActive && highlightCurrent ? 'opacity-100' : 'opacity-70',
@@ -117,17 +127,28 @@ export function BlockRenderer({
     default:
       return (
         <div
+          {...dataAttrs}
           className={clsx(
             'transition-opacity duration-300',
             isActive && highlightCurrent ? 'opacity-100' : 'opacity-70',
           )}
         >
-          <p
-            className="teleprompter-text text-white"
-            style={{ fontSize: `${fontSize}px`, lineHeight: lineSpacing }}
-          >
-            {block.content}
-          </p>
+          {isActive && highlightCurrent ? (
+            <SentenceHighlighter
+              text={block.content}
+              currentSentenceIndex={0}
+              fontSize={fontSize}
+              lineSpacing={lineSpacing}
+              activeWordIndex={activeWordIndex}
+            />
+          ) : (
+            <p
+              className="teleprompter-text text-white"
+              style={{ fontSize: `${fontSize}px`, lineHeight: lineSpacing }}
+            >
+              {block.content}
+            </p>
+          )}
         </div>
       );
   }

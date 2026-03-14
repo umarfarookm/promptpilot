@@ -151,10 +151,11 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
               </p>
             ) : (
               <div className="space-y-4">
-                {previewBlocks.map((block) => (
+                {previewBlocks.map((block, index) => (
                   <BlockRenderer
                     key={block.id}
                     block={block}
+                    blockIndex={index}
                     fontSize={20}
                     lineSpacing={1.6}
                     isActive={false}

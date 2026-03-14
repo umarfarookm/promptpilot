@@ -1,6 +1,6 @@
 'use client';
 
-import type { TeleprompterSettings, TeleprompterState } from '@promptpilot/types';
+import type { TeleprompterSettings, TeleprompterState, SpeechRecognitionStatus } from '@promptpilot/types';
 
 interface TeleprompterControlsProps {
   state: TeleprompterState;
@@ -9,7 +9,19 @@ interface TeleprompterControlsProps {
   onReset: () => void;
   onSettingsChange: (update: Partial<TeleprompterSettings>) => void;
   onToggleFullscreen: () => void;
+  speechStatus: SpeechRecognitionStatus;
+  speechProgress: number;
+  onToggleSpeechSync: () => void;
 }
+
+const STATUS_LABELS: Record<SpeechRecognitionStatus, string> = {
+  idle: '',
+  'requesting-mic': 'Requesting mic...',
+  listening: 'Listening',
+  paused: 'Paused',
+  error: 'Error',
+  unsupported: 'Not supported',
+};
 
 export function TeleprompterControls({
   state,
@@ -18,6 +30,9 @@ export function TeleprompterControls({
   onReset,
   onSettingsChange,
   onToggleFullscreen,
+  speechStatus,
+  speechProgress,
+  onToggleSpeechSync,
 }: TeleprompterControlsProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -25,9 +40,12 @@ export function TeleprompterControls({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const isSpeechMode = settings.scrollMode === 'speech';
+  const isListening = speechStatus === 'listening';
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 bg-black/70 px-6 py-4 backdrop-blur-sm transition-opacity hover:opacity-100 opacity-40">
-      <div className="mx-auto flex max-w-4xl items-center gap-6">
+      <div className="mx-auto flex max-w-5xl items-center gap-4">
         {/* Reset */}
         <button
           type="button"
@@ -45,24 +63,66 @@ export function TeleprompterControls({
           </svg>
         </button>
 
-        {/* Play/Pause - large centered button */}
+        {/* Play/Pause - only for auto mode */}
+        {!isSpeechMode && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-pp-primary-600 text-white transition-colors hover:bg-pp-primary-700"
+            title={state.isPlaying ? 'Pause' : 'Play'}
+          >
+            {state.isPlaying ? (
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5.14v14.72a1 1 0 001.5.86l11-7.36a1 1 0 000-1.72l-11-7.36A1 1 0 008 5.14z" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* Mic toggle - for speech mode */}
         <button
           type="button"
-          onClick={onToggle}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-pp-primary-600 text-white transition-colors hover:bg-pp-primary-700"
-          title={state.isPlaying ? 'Pause' : 'Play'}
+          onClick={onToggleSpeechSync}
+          className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+            isListening
+              ? 'bg-red-600 text-white animate-pulse hover:bg-red-700'
+              : isSpeechMode
+                ? 'bg-pp-primary-600 text-white hover:bg-pp-primary-700'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-white'
+          }`}
+          title={isListening ? 'Stop listening' : 'Start speech sync (M)'}
         >
-          {state.isPlaying ? (
-            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          ) : (
-            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5.14v14.72a1 1 0 001.5.86l11-7.36a1 1 0 000-1.72l-11-7.36A1 1 0 008 5.14z" />
-            </svg>
-          )}
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+            />
+          </svg>
         </button>
+
+        {/* Speech status badge */}
+        {speechStatus !== 'idle' && (
+          <div className="flex items-center gap-2">
+            {isListening && (
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            )}
+            <span className={`text-xs ${speechStatus === 'error' ? 'text-red-400' : 'text-gray-400'}`}>
+              {STATUS_LABELS[speechStatus]}
+            </span>
+            {speechProgress > 0 && (
+              <span className="text-xs text-gray-500">
+                {Math.round(speechProgress * 100)}%
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Elapsed time */}
         <span className="min-w-[4rem] text-center text-sm tabular-nums text-gray-400">
@@ -86,8 +146,8 @@ export function TeleprompterControls({
           </span>
         </div>
 
-        {/* Scroll speed slider */}
-        <div className="flex items-center gap-2">
+        {/* Scroll speed slider - dimmed in speech mode */}
+        <div className={`flex items-center gap-2 ${isSpeechMode ? 'opacity-30' : ''}`}>
           <label className="text-xs text-gray-500">Speed</label>
           <input
             type="range"
@@ -97,6 +157,7 @@ export function TeleprompterControls({
             value={settings.scrollSpeed}
             onChange={(e) => onSettingsChange({ scrollSpeed: Number(e.target.value) })}
             className="w-20 accent-pp-primary-500"
+            disabled={isSpeechMode}
           />
           <span className="min-w-[2rem] text-xs tabular-nums text-gray-400">
             {settings.scrollSpeed}
@@ -105,6 +166,24 @@ export function TeleprompterControls({
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Scroll mode toggle */}
+        <button
+          type="button"
+          onClick={() =>
+            onSettingsChange({
+              scrollMode: isSpeechMode ? 'auto' : 'speech',
+            })
+          }
+          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            isSpeechMode
+              ? 'bg-pp-primary-600/20 text-pp-primary-400'
+              : 'text-gray-400 hover:bg-white/10 hover:text-white'
+          }`}
+          title="Toggle scroll mode (V)"
+        >
+          {isSpeechMode ? 'Voice' : 'Auto'}
+        </button>
 
         {/* Mirror toggle */}
         <button
