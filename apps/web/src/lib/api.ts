@@ -96,6 +96,28 @@ export async function requestTiming(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Recording endpoints
+// ---------------------------------------------------------------------------
+
+export async function fetchRecordings(
+  scriptId: string,
+): Promise<ApiResponse<Array<{ id: string; scriptId: string; title: string; durationMs: number; createdAt: string }>>> {
+  return request(`/api/scripts/${scriptId}/recordings`);
+}
+
+export async function fetchRecording(id: string): Promise<ApiResponse<unknown>> {
+  return request(`/api/recordings/${id}`);
+}
+
+export async function deleteRecording(id: string): Promise<ApiResponse<void>> {
+  return request<void>(`/api/recordings/${id}`, { method: 'DELETE' });
+}
+
+export function getRecordingDownloadUrl(id: string): string {
+  return `${API_URL}/api/recordings/${id}/download`;
+}
+
 /**
  * Stream an AI request via SSE.
  * Returns an AbortController so the caller can cancel mid-stream.
