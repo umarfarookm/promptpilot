@@ -1,13 +1,25 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import { TimingDisplay } from './TimingDisplay';
 
 interface EditorToolbarProps {
   onImport: (content: string) => void;
   onExport: () => void;
+  onToggleAi?: () => void;
+  onOpenTemplates?: () => void;
+  aiPanelOpen?: boolean;
+  rawContent: string;
 }
 
-export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
+export function EditorToolbar({
+  onImport,
+  onExport,
+  onToggleAi,
+  onOpenTemplates,
+  aiPanelOpen,
+  rawContent,
+}: EditorToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showHelp, setShowHelp] = useState(false);
 
@@ -31,8 +43,11 @@ export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
     [onImport],
   );
 
+  const btnClass =
+    'inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-pp-dark-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white';
+
   return (
-    <div className="relative flex items-center gap-2">
+    <div className="relative flex flex-wrap items-center gap-2">
       {/* Import */}
       <input
         ref={fileInputRef}
@@ -44,7 +59,7 @@ export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-pp-dark-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+        className={btnClass}
       >
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -58,11 +73,7 @@ export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
       </button>
 
       {/* Export */}
-      <button
-        type="button"
-        onClick={onExport}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-pp-dark-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-      >
+      <button type="button" onClick={onExport} className={btnClass}>
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
@@ -74,11 +85,26 @@ export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
         Export
       </button>
 
+      {/* Templates */}
+      {onOpenTemplates && (
+        <button type="button" onClick={onOpenTemplates} className={btnClass}>
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+          Templates
+        </button>
+      )}
+
       {/* Format help */}
       <button
         type="button"
         onClick={() => setShowHelp((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-pp-dark-900 px-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+        className={btnClass}
       >
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -90,6 +116,31 @@ export function EditorToolbar({ onImport, onExport }: EditorToolbarProps) {
         </svg>
         Format Help
       </button>
+
+      {/* AI Assistant toggle */}
+      {onToggleAi && (
+        <button
+          type="button"
+          onClick={onToggleAi}
+          className={`${btnClass} ${aiPanelOpen ? '!border-pp-primary-500 !text-pp-primary-400' : ''}`}
+        >
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          AI Assistant
+        </button>
+      )}
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Timing display */}
+      <TimingDisplay rawContent={rawContent} />
 
       {/* Help popup */}
       {showHelp && (

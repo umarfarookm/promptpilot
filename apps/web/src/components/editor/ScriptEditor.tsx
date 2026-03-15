@@ -4,8 +4,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Script, ScriptBlock, CreateScriptRequest } from '@promptpilot/types';
 import { useScript } from '@/hooks/useScript';
+import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { BlockRenderer } from '@/components/teleprompter/BlockRenderer';
 import { EditorToolbar } from './EditorToolbar';
+import { TemplatePickerModal } from './TemplatePickerModal';
+import { AiPanel } from '@/components/ai/AiPanel';
 
 interface ScriptEditorProps {
   mode: 'create' | 'edit';
@@ -61,10 +64,13 @@ function parseScript(rawContent: string): ScriptBlock[] {
 export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
   const router = useRouter();
   const { save, loading } = useScript();
+  const ai = useAiAssistant();
 
   const [title, setTitle] = useState(initialScript?.title || '');
   const [description, setDescription] = useState(initialScript?.description || '');
   const [rawContent, setRawContent] = useState(initialScript?.rawContent || '');
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
   const previewBlocks = useMemo(() => parseScript(rawContent), [rawContent]);
 
@@ -101,6 +107,26 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
     URL.revokeObjectURL(url);
   }, [rawContent, title]);
 
+  const handleApplyAiContent = useCallback((content: string) => {
+    setRawContent(content);
+    // Auto-fill title from the first SAY/TEXT line if title is empty
+    if (!title.trim()) {
+      const firstLine = content
+        .split('\n')
+        .map((l) => l.replace(/^\[(SAY|TEXT|ACTION|COMMAND)\]\s*/i, '').trim())
+        .find((l) => l.length > 0);
+      if (firstLine) {
+        const autoTitle = firstLine.length > 60 ? firstLine.slice(0, 57) + '...' : firstLine;
+        setTitle(autoTitle);
+      }
+    }
+    ai.reset();
+  }, [ai, title]);
+
+  const handleSelectTemplate = useCallback((skeleton: string) => {
+    setRawContent(skeleton);
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Title and description */}
@@ -122,10 +148,21 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
       </div>
 
       {/* Toolbar */}
-      <EditorToolbar onImport={handleImport} onExport={handleExport} />
+      <EditorToolbar
+        onImport={handleImport}
+        onExport={handleExport}
+        onToggleAi={() => setAiPanelOpen((v) => !v)}
+        onOpenTemplates={() => setTemplateModalOpen(true)}
+        aiPanelOpen={aiPanelOpen}
+        rawContent={rawContent}
+      />
 
-      {/* Split pane: editor + preview */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Main content area: editor + preview + optional AI panel */}
+      <div
+        className={`grid gap-4 ${
+          aiPanelOpen ? 'lg:grid-cols-[1fr_1fr_380px]' : 'lg:grid-cols-2'
+        }`}
+      >
         {/* Left: raw editor */}
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-medium text-gray-400">
@@ -139,7 +176,7 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
           />
         </div>
 
-        {/* Right: live preview */}
+        {/* Middle: live preview */}
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-medium text-gray-400">
             Live Preview
@@ -166,6 +203,17 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
             )}
           </div>
         </div>
+
+        {/* Right: AI panel (conditional) */}
+        {aiPanelOpen && (
+          <div className="flex flex-col rounded-lg border border-gray-700 bg-pp-dark-900">
+            <AiPanel
+              ai={ai}
+              rawContent={rawContent}
+              onApply={handleApplyAiContent}
+            />
+          </div>
+        )}
       </div>
 
       {/* Action buttons */}
@@ -186,6 +234,13 @@ export function ScriptEditor({ mode, initialScript }: ScriptEditorProps) {
           Cancel
         </button>
       </div>
+
+      {/* Template picker modal */}
+      <TemplatePickerModal
+        open={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onSelect={handleSelectTemplate}
+      />
     </div>
   );
 }
