@@ -112,7 +112,7 @@ export function useTeleprompter(blockCount: number) {
 
   const play = useCallback(() => {
     // Only run auto-scroll in auto mode
-    if (settings.scrollMode === 'speech') return;
+    if (settings.scrollMode === 'speech' || settings.scrollMode === 'step') return;
     setState((prev) => ({ ...prev, isPlaying: true }));
     lastTimeRef.current = 0;
     if (!startTimeRef.current) {

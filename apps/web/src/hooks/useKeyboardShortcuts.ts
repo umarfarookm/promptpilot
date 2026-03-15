@@ -8,6 +8,11 @@ interface KeyboardShortcutActions {
   setSettings: (update: Partial<TeleprompterSettings>) => void;
   settings: TeleprompterSettings;
   onToggleSpeechSync?: () => void;
+  onStepAdvance?: () => void;
+  onStepPrevious?: () => void;
+  onStepRun?: () => void;
+  onStepSkip?: () => void;
+  onClose?: () => void;
 }
 
 export function useKeyboardShortcuts({
@@ -15,6 +20,11 @@ export function useKeyboardShortcuts({
   setSettings,
   settings,
   onToggleSpeechSync,
+  onStepAdvance,
+  onStepPrevious,
+  onStepRun,
+  onStepSkip,
+  onClose,
 }: KeyboardShortcutActions) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -26,6 +36,37 @@ export function useKeyboardShortcuts({
         target.isContentEditable
       ) {
         return;
+      }
+
+      const isStepMode = settings.scrollMode === 'step';
+
+      // Step mode shortcuts
+      if (isStepMode) {
+        switch (e.key) {
+          case 'Enter':
+          case 'ArrowRight':
+            e.preventDefault();
+            onStepAdvance?.();
+            return;
+
+          case 'Backspace':
+          case 'ArrowLeft':
+            e.preventDefault();
+            onStepPrevious?.();
+            return;
+
+          case 'r':
+          case 'R':
+            e.preventDefault();
+            onStepRun?.();
+            return;
+
+          case 's':
+          case 'S':
+            e.preventDefault();
+            onStepSkip?.();
+            return;
+        }
       }
 
       switch (e.key) {
@@ -67,6 +108,8 @@ export function useKeyboardShortcuts({
         case 'Escape':
           if (document.fullscreenElement) {
             document.exitFullscreen();
+          } else if (onClose) {
+            onClose();
           }
           break;
 
@@ -91,16 +134,34 @@ export function useKeyboardShortcuts({
         case 'v':
         case 'V':
           e.preventDefault();
-          setSettings({
-            scrollMode: settings.scrollMode === 'auto' ? 'speech' : 'auto',
-          });
+          {
+            const hasStepMode = !!onStepAdvance;
+            const modes: Array<'auto' | 'speech' | 'step'> = hasStepMode
+              ? ['auto', 'speech', 'step']
+              : ['auto', 'speech'];
+            const currentIdx = modes.indexOf(settings.scrollMode);
+            const nextMode = modes[(currentIdx + 1) % modes.length];
+            setSettings({ scrollMode: nextMode });
+          }
           break;
 
         default:
           break;
       }
     },
-    [toggle, setSettings, settings.scrollSpeed, settings.fontSize, settings.scrollMode, onToggleSpeechSync],
+    [
+      toggle,
+      setSettings,
+      settings.scrollSpeed,
+      settings.fontSize,
+      settings.scrollMode,
+      onToggleSpeechSync,
+      onStepAdvance,
+      onStepPrevious,
+      onStepRun,
+      onStepSkip,
+      onClose,
+    ],
   );
 
   useEffect(() => {

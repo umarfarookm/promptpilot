@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import type { ScriptBlock } from '@promptpilot/types';
 import { SentenceHighlighter } from './SentenceHighlighter';
+import type { BlockStatus } from '@/hooks/useStepMode';
 
 interface BlockRendererProps {
   block: ScriptBlock;
@@ -12,7 +13,17 @@ interface BlockRendererProps {
   isActive: boolean;
   highlightCurrent: boolean;
   activeWordIndex?: number;
+  executionStatus?: BlockStatus;
 }
+
+const STATUS_BADGE: Record<BlockStatus, { label: string; className: string } | null> = {
+  pending: null,
+  active: null,
+  running: { label: 'Running', className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+  success: { label: 'Done', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
+  failed: { label: 'Failed', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  skipped: { label: 'Skipped', className: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
+};
 
 export function BlockRenderer({
   block,
@@ -22,6 +33,7 @@ export function BlockRenderer({
   isActive,
   highlightCurrent,
   activeWordIndex,
+  executionStatus,
 }: BlockRendererProps) {
   const dataAttrs = { 'data-block-index': blockIndex };
 
@@ -96,7 +108,8 @@ export function BlockRenderer({
         </div>
       );
 
-    case 'COMMAND':
+    case 'COMMAND': {
+      const badge = executionStatus ? STATUS_BADGE[executionStatus] : null;
       return (
         <div
           {...dataAttrs}
@@ -105,14 +118,24 @@ export function BlockRenderer({
             isActive && highlightCurrent ? 'opacity-100' : 'opacity-70',
           )}
         >
-          <span
-            className="mb-1 block text-xs uppercase tracking-widest text-gray-500"
-            style={{ fontSize: `${Math.max(fontSize * 0.3, 10)}px` }}
-          >
-            Command
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className="block text-xs uppercase tracking-widest text-gray-500"
+              style={{ fontSize: `${Math.max(fontSize * 0.3, 10)}px` }}
+            >
+              Command
+            </span>
+            {badge && (
+              <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>
+                {executionStatus === 'running' && (
+                  <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400" />
+                )}
+                {badge.label}
+              </span>
+            )}
+          </div>
           <pre
-            className="whitespace-pre-wrap text-green-400"
+            className="mt-1 whitespace-pre-wrap text-green-400"
             style={{
               fontSize: `${fontSize * 0.65}px`,
               lineHeight: lineSpacing,
@@ -122,6 +145,7 @@ export function BlockRenderer({
           </pre>
         </div>
       );
+    }
 
     case 'TEXT':
     default:

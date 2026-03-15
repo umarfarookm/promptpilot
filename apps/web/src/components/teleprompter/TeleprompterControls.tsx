@@ -12,6 +12,7 @@ interface TeleprompterControlsProps {
   speechStatus: SpeechRecognitionStatus;
   speechProgress: number;
   onToggleSpeechSync: () => void;
+  showStepMode?: boolean;
 }
 
 const STATUS_LABELS: Record<SpeechRecognitionStatus, string> = {
@@ -33,6 +34,7 @@ export function TeleprompterControls({
   speechStatus,
   speechProgress,
   onToggleSpeechSync,
+  showStepMode = false,
 }: TeleprompterControlsProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -41,6 +43,7 @@ export function TeleprompterControls({
   };
 
   const isSpeechMode = settings.scrollMode === 'speech';
+  const isStepMode = settings.scrollMode === 'step';
   const isListening = speechStatus === 'listening';
 
   return (
@@ -64,7 +67,7 @@ export function TeleprompterControls({
         </button>
 
         {/* Play/Pause - only for auto mode */}
-        {!isSpeechMode && (
+        {!isSpeechMode && !isStepMode && (
           <button
             type="button"
             onClick={onToggle}
@@ -146,8 +149,8 @@ export function TeleprompterControls({
           </span>
         </div>
 
-        {/* Scroll speed slider - dimmed in speech mode */}
-        <div className={`flex items-center gap-2 ${isSpeechMode ? 'opacity-30' : ''}`}>
+        {/* Scroll speed slider - dimmed in speech/step mode */}
+        <div className={`flex items-center gap-2 ${isSpeechMode || isStepMode ? 'opacity-30' : ''}`}>
           <label className="text-xs text-gray-500">Speed</label>
           <input
             type="range"
@@ -157,7 +160,7 @@ export function TeleprompterControls({
             value={settings.scrollSpeed}
             onChange={(e) => onSettingsChange({ scrollSpeed: Number(e.target.value) })}
             className="w-20 accent-pp-primary-500"
-            disabled={isSpeechMode}
+            disabled={isSpeechMode || isStepMode}
           />
           <span className="min-w-[2rem] text-xs tabular-nums text-gray-400">
             {settings.scrollSpeed}
@@ -168,22 +171,26 @@ export function TeleprompterControls({
         <div className="flex-1" />
 
         {/* Scroll mode toggle */}
-        <button
-          type="button"
-          onClick={() =>
-            onSettingsChange({
-              scrollMode: isSpeechMode ? 'auto' : 'speech',
-            })
-          }
-          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-            isSpeechMode
-              ? 'bg-pp-primary-600/20 text-pp-primary-400'
-              : 'text-gray-400 hover:bg-white/10 hover:text-white'
-          }`}
-          title="Toggle scroll mode (V)"
-        >
-          {isSpeechMode ? 'Voice' : 'Auto'}
-        </button>
+        <div className="flex rounded-lg border border-gray-700">
+          {(showStepMode
+            ? (['auto', 'speech', 'step'] as const)
+            : (['auto', 'speech'] as const)
+          ).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onSettingsChange({ scrollMode: mode })}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg ${
+                settings.scrollMode === mode
+                  ? 'bg-pp-primary-600/20 text-pp-primary-400'
+                  : 'text-gray-400 hover:bg-white/10 hover:text-white'
+              }`}
+              title={`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode (V)`}
+            >
+              {mode === 'speech' ? 'Voice' : mode.charAt(0).toUpperCase() + mode.slice(1)}
+            </button>
+          ))}
+        </div>
 
         {/* Mirror toggle */}
         <button

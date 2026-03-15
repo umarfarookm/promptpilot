@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ScriptBlock } from '@promptpilot/types';
 import { useTeleprompter } from '@/hooks/useTeleprompter';
 import { useSpeechSync } from '@/hooks/useSpeechSync';
@@ -8,12 +9,16 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { BlockRenderer } from './BlockRenderer';
 import { TeleprompterControls } from './TeleprompterControls';
 import { CameraIndicator } from './CameraIndicator';
+import type { StepModeHook } from '@/hooks/useStepMode';
 
 interface TeleprompterViewProps {
   blocks: ScriptBlock[];
+  stepMode?: StepModeHook;
+  scriptId?: string;
 }
 
-export function TeleprompterView({ blocks }: TeleprompterViewProps) {
+export function TeleprompterView({ blocks, stepMode, scriptId }: TeleprompterViewProps) {
+  const router = useRouter();
   const {
     scrollRef,
     state,
@@ -21,8 +26,19 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
     setSettings,
     toggle,
     reset,
+    scrollToBlock,
     scrollToWordPosition,
   } = useTeleprompter(blocks.length);
+
+  // In demo mode, force step mode; in standalone mode, reset step mode to auto
+  useEffect(() => {
+    if (stepMode && settings.scrollMode !== 'step') {
+      setSettings({ scrollMode: 'step' });
+    } else if (!stepMode && settings.scrollMode === 'step') {
+      setSettings({ scrollMode: 'auto' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!stepMode]);
 
   const speechSync = useSpeechSync(blocks, {
     enabled: settings.scrollMode === 'speech',
@@ -36,6 +52,13 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
       scrollToWordPosition(speechSync.matchedPosition);
     }
   }, [settings.scrollMode, speechSync.matchedPosition, scrollToWordPosition]);
+
+  // In step mode, scroll to current block when it changes
+  useEffect(() => {
+    if (stepMode && settings.scrollMode === 'step') {
+      scrollToBlock(stepMode.state.currentIndex);
+    }
+  }, [stepMode, stepMode?.state.currentIndex, settings.scrollMode, scrollToBlock]);
 
   const handleToggleSpeechSync = useCallback(async () => {
     if (speechSync.status === 'listening') {
@@ -52,13 +75,25 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
   const handleReset = useCallback(() => {
     reset();
     speechSync.reset();
-  }, [reset, speechSync]);
+    stepMode?.reset();
+  }, [reset, speechSync, stepMode]);
+
+  const handleClose = useCallback(() => {
+    if (scriptId) {
+      router.push(`/scripts/${scriptId}`);
+    } else {
+      router.push('/');
+    }
+  }, [scriptId, router]);
 
   useKeyboardShortcuts({
     toggle,
     setSettings,
     settings,
     onToggleSpeechSync: handleToggleSpeechSync,
+    onStepAdvance: stepMode?.advance,
+    onStepPrevious: stepMode?.previous,
+    onClose: handleClose,
   });
 
   const handleToggleFullscreen = useCallback(() => {
@@ -77,14 +112,34 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
     return pos.wordIndex;
   };
 
+  // Determine active block: step mode takes precedence
+  const activeBlockIndex = stepMode
+    ? stepMode.state.currentIndex
+    : state.currentBlockIndex;
+
   return (
     <div
-      className="relative h-screen w-screen bg-black"
+      className={`relative bg-black ${stepMode ? 'h-full w-full' : 'h-screen w-screen'}`}
       style={{
         transform: settings.mirrorMode ? 'scaleX(-1)' : undefined,
       }}
     >
       <CameraIndicator position={settings.cameraPosition} />
+
+      {/* Back button */}
+      {scriptId && !stepMode && (
+        <a
+          href={`/scripts/${scriptId}`}
+          className="fixed left-4 top-4 z-50 flex items-center gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-sm text-gray-400 opacity-0 backdrop-blur-sm transition-opacity hover:opacity-100 hover:text-white focus:opacity-100"
+          style={{ transform: settings.mirrorMode ? 'scaleX(-1)' : undefined }}
+          title="Back to editor (Esc)"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Close
+        </a>
+      )}
 
       {/* Speech transcript debug overlay */}
       {settings.scrollMode === 'speech' && speechSync.transcript && (
@@ -116,9 +171,14 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
               blockIndex={index}
               fontSize={settings.fontSize}
               lineSpacing={settings.lineSpacing}
-              isActive={index === state.currentBlockIndex}
+              isActive={index === activeBlockIndex}
               highlightCurrent={settings.highlightCurrent}
               activeWordIndex={getActiveWordIndex(index)}
+              executionStatus={
+                stepMode && block.type === 'COMMAND'
+                  ? stepMode.state.blockStatuses[index]
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -143,6 +203,7 @@ export function TeleprompterView({ blocks }: TeleprompterViewProps) {
           speechStatus={speechSync.status}
           speechProgress={speechSync.progress}
           onToggleSpeechSync={handleToggleSpeechSync}
+          showStepMode={!!stepMode}
         />
       </div>
 
