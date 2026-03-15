@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { TeleprompterView } from '@/components/teleprompter/TeleprompterView';
+import { DemoLayout } from '@/components/terminal/DemoLayout';
 import { useScript } from '@/hooks/useScript';
 
 export default function PresentPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const { script, loading, error, refresh } = useScript(params.id);
+  const isDemoMode = searchParams.get('mode') === 'demo';
 
   useEffect(() => {
     if (params.id) {
@@ -41,5 +44,15 @@ export default function PresentPage() {
     );
   }
 
-  return <TeleprompterView blocks={script.blocks} />;
+  if (isDemoMode) {
+    return (
+      <DemoLayout
+        blocks={script.blocks}
+        scriptId={script.id}
+        scriptTitle={script.title}
+      />
+    );
+  }
+
+  return <TeleprompterView blocks={script.blocks} scriptId={script.id} />;
 }

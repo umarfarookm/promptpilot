@@ -9,7 +9,7 @@ export interface TeleprompterSettings {
   theme: "dark" | "light";
   lineSpacing: number;
   marginPercent: number;
-  scrollMode: 'auto' | 'speech';
+  scrollMode: 'auto' | 'speech' | 'step';
   speechSync: SpeechSyncSettings;
 }
 
