@@ -30,7 +30,7 @@ PromptPilot helps you deliver presentations, tutorials, and live coding sessions
 - **Speech Sync** — Hands-free scrolling driven by real-time speech recognition
 - **Script Editor** — Write and edit scripts with live preview for the `.copilot` format
 - **Demo Copilot** — Structured scripts with SAY, ACTION, and COMMAND blocks for guided demos
-- **AI Script Assistant** — Generate, rewrite, and polish scripts with AI *(coming soon)*
+- **AI Script Assistant** — Generate, rewrite, and polish scripts with AI (Ollama, OpenAI, or Anthropic)
 - **Keyboard Shortcuts** — Space (play/pause), M (mic toggle), V (voice/auto mode), F (fullscreen)
 - **Script Management** — Create, import/export, and organize your presentation scripts
 
@@ -51,13 +51,21 @@ docker-compose up -d
 pnpm db:migrate
 pnpm db:seed
 
+# Set up AI (pick one)
+brew install ollama && ollama serve &   # Option A: Ollama (free, local)
+ollama pull llama3.2
+
+# Or use a cloud provider instead — add to apps/api/.env:
+#   AI_PROVIDER=openai    AI_API_KEY=sk-...
+#   AI_PROVIDER=anthropic AI_API_KEY=sk-ant-...
+
 # Start the development server
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-See the full [Getting Started](./docs/getting-started.md) guide for prerequisites and troubleshooting.
+See the full [Getting Started](./docs/getting-started.md) guide for prerequisites, AI provider setup, and troubleshooting.
 
 ## Technology Stack
 
@@ -66,6 +74,7 @@ See the full [Getting Started](./docs/getting-started.md) guide for prerequisite
 | Frontend | Next.js 15 (App Router), React 19, Tailwind CSS |
 | Backend | Express, Node.js |
 | Database | PostgreSQL (raw SQL via node-postgres) |
+| AI | Ollama (local), OpenAI, or Anthropic — configurable |
 | Speech | Web Speech API (browser-native) |
 | Monorepo | pnpm workspaces, Turborepo |
 | Language | TypeScript (end to end) |
