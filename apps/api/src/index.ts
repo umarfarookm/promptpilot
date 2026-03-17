@@ -9,6 +9,7 @@ import aiRouter from "./routes/ai";
 import templatesRouter from "./routes/templates";
 import timingRouter from "./routes/timing";
 import recordingsRouter from "./routes/recordings";
+import analyticsRouter from "./routes/analytics";
 import { attachWebSocket } from "./terminal/ws-handler";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(aiRouter);
 app.use(templatesRouter);
 app.use(timingRouter);
 app.use(recordingsRouter);
+app.use(analyticsRouter);
 
 // Error handler (must be last)
 app.use(errorHandler);

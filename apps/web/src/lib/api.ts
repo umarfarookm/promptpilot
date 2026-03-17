@@ -9,6 +9,8 @@ import type {
   ScriptTemplate,
   TimingEstimate,
   TimingRequest,
+  SessionAnalytics,
+  ScriptAnalytics,
 } from '@promptpilot/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -116,6 +118,22 @@ export async function deleteRecording(id: string): Promise<ApiResponse<void>> {
 
 export function getRecordingDownloadUrl(id: string): string {
   return `${API_URL}/api/recordings/${id}/download`;
+}
+
+// ---------------------------------------------------------------------------
+// Analytics endpoints
+// ---------------------------------------------------------------------------
+
+export async function fetchRecordingAnalytics(
+  id: string,
+): Promise<ApiResponse<SessionAnalytics>> {
+  return request<SessionAnalytics>(`/api/recordings/${id}/analytics`);
+}
+
+export async function fetchScriptAnalytics(
+  scriptId: string,
+): Promise<ApiResponse<ScriptAnalytics>> {
+  return request<ScriptAnalytics>(`/api/scripts/${scriptId}/analytics`);
 }
 
 /**
