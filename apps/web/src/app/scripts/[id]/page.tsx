@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { ScriptEditor } from '@/components/editor/ScriptEditor';
+import { RecordingList } from '@/components/analytics/RecordingList';
 import { useScript } from '@/hooks/useScript';
 
 export default function EditScriptPage() {
@@ -36,6 +37,7 @@ export default function EditScriptPage() {
           <>
             <h1 className="mb-6 text-2xl font-bold text-white">Edit Script</h1>
             <ScriptEditor mode="edit" initialScript={script} />
+            <RecordingList scriptId={params.id} />
           </>
         )}
       </main>

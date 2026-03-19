@@ -44,6 +44,12 @@ export function ScriptCard({ script }: ScriptCardProps) {
           </svg>
           Present
         </Link>
+        <Link
+          href={`/scripts/${script.id}/analytics`}
+          className="rounded-md px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+        >
+          Analytics
+        </Link>
       </div>
     </div>
   );
